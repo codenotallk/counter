@@ -1,7 +1,7 @@
 use core::str;
-use std::{net::UdpSocket, sync::mpsc::Sender};
+use std::{net::UdpSocket, sync::{Arc, Mutex}};
 
-use crate::domain::counter::Counter;
+use crate::domain::repository::Repository;
 
 use super::provider::from_json;
 
@@ -9,18 +9,18 @@ use super::provider::from_json;
 pub struct Controller {
     run: bool,
     socket: UdpSocket,
-    sender: Sender<Counter>
+    repository: Arc<Mutex<Repository>>,
 }
 
 impl Controller {
-    pub fn new (port: &str, sender: Sender<Counter>) -> Self {
+    pub fn new (port: &str, repository: Arc<Mutex<Repository>>) -> Self {
 
         let address = format!("{}:{}" ,"127.0.0.1", port);
         
         Controller {
             run: true, 
             socket: UdpSocket::bind(address).unwrap(),
-            sender,
+            repository,
         }
     }
 
@@ -43,10 +43,9 @@ impl Controller {
 
         let input = from_json(data.to_owned());
 
-        match self.sender.send(input.into()) {
-            Ok(_) => (),
-            Err(e) => eprintln!("Error to send {}", e),
-        }
+        let mut repository = self.repository.lock().unwrap();
+
+        repository.update(input.into());
 
         data.to_string()
     }
