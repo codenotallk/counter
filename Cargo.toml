@@ -1,5 +1,5 @@
 [workspace]
-members = ["services/counter"]
+members = ["services/counter", "services/display"]
 
 [workspace.dependencies]
 serde = {version = "1.0.159", features = ["derive"]}
